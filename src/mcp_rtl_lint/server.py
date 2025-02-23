@@ -20,13 +20,15 @@ async def run_verilator_lint(ctx: Context, filename: str) -> str:
     Returns:
         String of verilator output (stderr)
     """
-    # TODO verilator bin param
+    # TODO verilator bin from env
     try:
         await ctx.info(f"Running verilator lint on file: {filename}")
-        
+
+        lint_cmd = ["verilator", "--lint-only", "-Wall", filename]
+
         # Run verilator with lint-only and all warnings enabled
         result = subprocess.run(
-            ["/opt/homebrew/bin/verilator", "--lint-only", "-Wall", filename],
+            lint_cmd,
             capture_output=True,
             text=True,
             check=False,
@@ -38,9 +40,13 @@ async def run_verilator_lint(ctx: Context, filename: str) -> str:
 
         # Log an error if the return code is non-zero
         if result.returncode != 0:
-            await ctx.error(f"Verilator encountered an error (return code: {result.returncode})")
+            await ctx.error(
+                f"Verilator encountered an error (return code: {result.returncode})"
+            )
 
-        return result.stderr
+        response = f"Executed verilog linter verilator with the command `{' '.join(lint_cmd)}`\n Verilator output:\n```{str( result.stdout )+str( result.stderr )}```\n"
+
+        return response
 
     except subprocess.CalledProcessError as e:
         await ctx.error(f"CalledProcessError: {str(e)}")
@@ -48,6 +54,7 @@ async def run_verilator_lint(ctx: Context, filename: str) -> str:
     except Exception as e:
         await ctx.error(f"Unexpected error: {str(e)}")
         return f"Error: {str(e)}"
+
 
 # import ipdb;
 # ipdb.set_trace()
